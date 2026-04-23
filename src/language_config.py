@@ -14,10 +14,21 @@ class PythonConfig:
     supertypes=["_simple_statement","_compound_statement","expression","primary_expression",
                 "pattern","parameter"]
 
+class JavaConfig:
+    extras=["line_comment","block_comment"]
+    zero_len_tokens=["_space","_start_line","_space_line","_node_content","_newline","_indent","_dedent","_string_token"]
+    externals=[]
+    custom_externals=["_space","_start_line","_space_line","_node_content","_newline","_indent","_dedent","_string_token"]
+    supertypes=["expression","declaration","statement","primary_expression","_literal","_type","_simple_type","_unannotated_type","module_directive"]
+    inline_symbols=['_annotation', '_class_body_declaration', '_constructor_declarator', '_default_value', '_element_value', '_escape_sequence', '_literal', '_method_declarator', '_method_header', '_multiline_string_fragment', '_multiline_string_literal', '_name', '_reserved_identifier', '_simple_type', '_string_literal', '_toplevel_statement', '_type', '_unannotated_type', '_unqualified_object_creation_expression', '_variable_declarator_id', '_variable_declarator_list', '_variable_initializer', '_wildcard_bounds', 'declaration', 'expression', 'module_directive', 'primary_expression', 'statement',
+                    '_space','_start_line','_space_line','_node_content','_newline','_indent','_dedent','_string_token']
+
 import json
 with open("config.json",'r') as f:
     config=json.load(f)
 if(config['language']=='python'):
     language_config=PythonConfig
+elif(config['language']=='java'):
+    language_config=JavaConfig
 else:
     raise NotImplementedError(f"language {config['language']} not implemented")

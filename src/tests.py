@@ -1,11 +1,11 @@
 from .utils import TreeDumper,compare_trees
-from .unparser import Unparser
+from .unparser import BaseUnparser
 from .build_parser import build_parser
 
 parser=build_parser(True)
 spy_parser=build_parser(False)
 
-def test_round_trip(source_code,unparser1:Unparser,unparser2:Unparser):
+def test_round_trip(source_code,unparser1:BaseUnparser,unparser2:BaseUnparser):
     tree = parser.parse(bytes(source_code, 'utf8'))
     unparser1.clear()
     success=unparser1.unparse(tree)

@@ -15,8 +15,8 @@ class Wrapper:#the origin node cannot be modified
         cls.tree_rules=read_tree_rules(filepath)
 
     @classmethod
-    def construct_node(cls,parent_node,origin_node,actual_type,is_inline,index):
-        if(actual_type in language_config.zero_len_tokens):
+    def construct_node(cls,parent_node,origin_node,actual_type,is_inline,is_zero_len,index):
+        if(is_zero_len):
             parent_node.types.append(actual_type)
             parent_node.zero_len_token_before_rules(index)
             return parent_node
@@ -93,7 +93,7 @@ class Wrapper:#the origin node cannot be modified
         #if(not self.types): self.exist=False
         if(not len(self.types)):
             self.exist=False
-        elif(exit_type in language_config.zero_len_tokens):
+        elif(self.information_stack[-1]['zero_len']):
             self.zero_len_token_after_rules(index,exit_type)#index not changed
         else:#for inline symbols
             self.after_rules(index-1,exit_type)#index point to the next children
@@ -114,6 +114,7 @@ class Wrapper:#the origin node cannot be modified
     def before_rules(self,index):
         information={"parent_type":self.types[-2],"type":self.types[-1],"field":self.aux_infs[index].field_name,
                      "symbol":True,
+                     "zero_len":False,
                      **self.get_prev_sibling(index)}
         rules=get_rules_for_parent(self.__class__.tree_rules,self.types[-2])
         new_index=self.insert_before_rules(index,rules['insert_before'],information)
@@ -121,7 +122,7 @@ class Wrapper:#the origin node cannot be modified
         self.information_stack.append(information)
 
     def zero_len_token_before_rules(self,index):
-        information={"parent_type":self.types[-2],"type":self.types[-1],"symbol":True}
+        information={"parent_type":self.types[-2],"type":self.types[-1],"symbol":True,"zero_len":True}
         rules=get_rules_for_parent(self.__class__.tree_rules,self.types[-2])
         #insertion before a zero_len_token(always inline) is useless
         self.custom_before_rules(index,rules['custom_before'],information)
@@ -197,6 +198,7 @@ class Wrapper:#the origin node cannot be modified
         next_inf=self.get_next_sibling(index)
         
         return {"type":node_type,"parent_type":parent_type,"field":field,"symbol":is_symbol,
+                "zero_len":False,
                 **prev_inf,
                 **next_inf}
     
@@ -246,7 +248,7 @@ class Wrapper:#the origin node cannot be modified
     def custom_before_rules(self,index,rules,information):
         new_index=index
         for r in rules:
-            if(information['type'] not in language_config.zero_len_tokens and self.aux_infs[index].rules_applied(r['index'])):
+            if((not information['zero_len']) and self.aux_infs[index].rules_applied(r['index'])):
                 continue
             if (check_conditions(r['condition'],r.get('not_condition',None),information)):
                 custom_method=getattr(self,r['content'])
@@ -268,10 +270,14 @@ class Wrapper:#the origin node cannot be modified
         if(len(egli_rules)==0):
             return index
         elif(len(egli_rules)>1):
-            apply_rule=find_specific_rule(egli_rules)
-            if(not apply_rule):
-                print("multiple replace rule")
-                return index
+            replace_content=set([r['content']['type'] if isinstance(r['content'],dict) else r['content'] for r in egli_rules])
+            if(len(replace_content)==1):
+                apply_rule=egli_rules[0]
+            else:
+                apply_rule=find_specific_rule(egli_rules)
+                if(not apply_rule):
+                    print("multiple replace rule")
+                    return index
         else:
             apply_rule=egli_rules[0]
         self.children[index]=StringNode(apply_rule['content'])
@@ -293,7 +299,7 @@ class Wrapper:#the origin node cannot be modified
     
     def insert_after_rules(self,index,rules,information):
         for r in rules:#the rules encountered later during traversal will be inserted in the front
-            if(information['type'] not in language_config.zero_len_tokens and self.aux_infs[index].rules_applied(r['index'])):
+            if((not information['zero_len']) and self.aux_infs[index].rules_applied(r['index'])):
                 continue
             if (check_conditions(r['condition'],r.get('not_condition',None),information)):
                 # ori_idx=self.aux_infs[index].ori_idx

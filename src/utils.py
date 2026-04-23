@@ -69,7 +69,7 @@ def writing_op(func):
         if(exec):
             func(*args,**kwargs)
         else:
-            obj.writing_operations.append([func.__name__,args[1:],kwargs])#exclude self
+            obj.writing_operations.append([func.__name__,args[1:],kwargs,{"rule":obj.stack[-1]}])#exclude self
     return wrapper
 
 def get_dict_hash(d:dict):

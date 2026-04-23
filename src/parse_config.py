@@ -390,7 +390,7 @@ def unify_form(items):
         if(get_symbol_name(items) in language_config.inline_symbols):
             return {"type":items,"intree":False}
         elif(items.startswith("$")):#'intree' is judged in the previous branch
-            error(f"Insertion or deletion of named node {items['type']}")
+            error(f"Insertion or deletion of named node {items}")
         else:
             return {"type":items,"text":items}
     else:

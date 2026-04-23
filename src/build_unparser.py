@@ -8,6 +8,8 @@ def build_unparser(ori_to_new,new_to_ori,filepath):
         config=json.load(f)
         if(config['language']=='python'):
             unparser_class=PythonUnparser
+        elif(config['language']=='java'):
+            unparser_class=JavaUnparser
         else:
             raise NotImplementedError(f"language {config['language']} not implemented")
     assert not ori_to_new or not new_to_ori
