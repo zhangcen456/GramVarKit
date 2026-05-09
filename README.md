@@ -1,7 +1,7 @@
-## GramTrans: A Research Tool for the Design of AI-oriented programming language grammar
+## GramVarKit: A Rule-Driven Toolkit Generator for Exploring AI-Oriented Grammar Variants
 ### Introduction
-GramTrans is a configurable tool designed to simplify the development of toolkits for AI-oriented grammars. 
-Built on top of [tree-sitter](https://github.com/tree-sitter/tree-sitter), GramTrans generates two parsers and two unparsers. The parsers convert source code into parse trees, while the unparsers perform grammar-aware transformations during the unparsing process. By specifying grammar differences in a user-defined configuration file, users can define how code should be transformed without manually implementing the conversion logic.
+GramVarKit is a configurable tool designed to simplify the development of toolkits for AI-oriented grammars. 
+Built on top of [tree-sitter](https://github.com/tree-sitter/tree-sitter), GramVarKit generates two parsers and two unparsers. The parsers convert source code into parse trees, while the unparsers perform grammar-aware conversions during the unparsing process. By specifying grammar differences in a user-defined configuration file, users can define how code should be transformed without manually implementing the conversion logic.
 
 ### Prerequisites
 The [tree-sitter](https://github.com/tree-sitter/tree-sitter) CLI and its [Python bindings](https://github.com/tree-sitter/py-tree-sitter) are required.
@@ -11,12 +11,12 @@ The configuration file defines the grammar differences between the original and 
 
 `import` specifies a list of additional transformation rule files to be included, allowing modular rule organization.
 
-The basic bidirectional transformation rules are contained in the `both` section, which will be parsed into two set of conversion rules for transformations in both directions.
+The basic bidirectional transformation rules are contained in the `both` section, which will be parsed into two sets of conversion rules for conversions in both directions.
 
 `ori_to_new` and `new_to_ori` contain unidirectional rules.
 
 #### Basic transform rules
-Basic transform rules can be used to describe how new grammar rules differ from their corresponding original grammar rules when only terminal symbols (represented as simple strings in the grammar file) are modified. The attribute `parent` refers to the name of the rule, while `original` and `new` specify the differing parts.
+Basic transform rules can be used to describe how new grammar rules differ from their corresponding original grammar rules when only terminal symbols (represented as simple strings in the grammar file) are modified. The attribute `prod_rule` refers to the name of the rule, while `original` and `new` specify the differing parts.
 
 ##### Keyword replacement
 In tree-sitter, grammar rules are written in JavaScript. For example, consider the rule for defining `import_statement` in Python.
@@ -36,7 +36,7 @@ import_statement: $ => seq(
 ```
 In this case, the keyword `import` in the original grammar is transformed to `<import_stmt>` in the new grammar. The corresponding transform rule is:
 ```
-{"parent":"import_statement","original":"import","new":"<import_stmt>"}
+{"prod_rule":"import_statement","original":"import","new":"<import_stmt>"}
 ```
 
 ##### Handling multiple keywords
@@ -63,7 +63,7 @@ if_statement: $ => seq(
 ```
 Here, the keyword `if` is transformed to `<if_stmt>`, and the `:` is removed. The transform rule is:
 ```
-{"parent":"if_statement","original":["if",{"field":"condition","anchor":true},":"],"new":["<if_stmt>",{"field":"condition","anchor":true}]}
+{"prod_rule":"if_statement","original":["if",{"field":"condition","anchor":true},":"],"new":["<if_stmt>",{"field":"condition","anchor":true}]}
 ```
 Elements in the `original` and `new` lists must appear in the same order as they do in the grammar, with no elements skipped.
 
@@ -96,15 +96,15 @@ with_statement: $ => seq(
 ```
 The problematic transformation rule:
 ```
-{"parent":"with_statement","original":["async","with",{"type":"$with_clause","anchor":true},":"],"new":["<async_keyword>","<with_stmt>",{"type":"$with_clause","anchor":true}]}
+{"prod_rule":"with_statement","original":["async","with",{"type":"$with_clause","anchor":true},":"],"new":["<async_keyword>","<with_stmt>",{"type":"$with_clause","anchor":true}]}
 ```
 In the rule above, `async` is expected to appear directly before the keyword `with`. If `async` does not appear in the original parse tree, the transformation rule will not trigger, and the subsequent transformation from `with` to `<with_stmt>` will not take place.
 
 Instead, we need to separate the transformation of `async` and the transformation of `with` to ensure that each transformation is handled independently. This way, the absence of `async` does not interfere with transforming `with`.
 Correct transformation rules:
 ```
-{"parent":"with_statement","original":"async","new":"<async_keyword>"},
-{"parent":"with_statement","original":["with",{"type":"$with_clause","anchor":true},":"],
+{"prod_rule":"with_statement","original":"async","new":"<async_keyword>"},
+{"prod_rule":"with_statement","original":["with",{"type":"$with_clause","anchor":true},":"],
     "new":["<with_stmt>",{"type":"$with_clause","anchor":true}]}
 ```
 The symbol `$` preceding `$with_clause` indicates that this refers to a non-terminal symbol, specifically the `with_clause` rule.
@@ -127,9 +127,9 @@ parameters: $ => seq(
 ``` 
 The transform rules are:
 ```
-{"parent":"parameters","original":[{"type":"(","prev_sibling":null},{"anchor":true}],"new":[{"anchor":true,"prev_sibling":null}]},
+{"prod_rule":"parameters","original":[{"type":"(","prev_sibling":null},{"anchor":true}],"new":[{"anchor":true,"prev_sibling":null}]},
 
-{"parent":"parameters","original":[{"anchor":true},{"type":")","next_sibling":null}],"new":[{"anchor":true,"next_sibling":null}]}
+{"prod_rule":"parameters","original":[{"anchor":true},{"type":")","next_sibling":null}],"new":[{"anchor":true,"next_sibling":null}]}
 ```
 By assigning the `null` value to attribute `prev_sibling`, `(` is only removed if it is the first child of the parameters node. Similarly, `")"` is deleted if it is the last child.
 
@@ -139,7 +139,7 @@ The list of all attributes available:
 ```
 
 ##### Generated conversion rules
-Based on the basic transformation rules defined in the `both` section, GramTrans automatically generates two sets of conversion rules: one for original-to-new transformation and the other for new-to-original transformation.
+Based on the basic transformation rules defined in the `both` section, GramVarKit automatically generates two sets of conversion rules: one for original-to-new transformation and the other for new-to-original transformation.
 
 Each generated rule may carry a `content` attribute, which provides the necessary symbol information for insertion or replacement operations. This content can be a simple string, a JSON object, or a list of symbols. For nonterminal symbols, fully describing its content is required since simply specifying the symbol type is insufficient for generating valid code during unparsing.
 
@@ -174,10 +174,12 @@ In this case, the parentheses should be removed when transforming from the origi
 ```
 
 #### Custom rules
-For more complex transformations beyond basic edits of terminal symbols, custom transformation functions can be defined in `src/custom_rules`.
+For more complex conversions beyond basic edits of terminal symbols, custom conversion functions can be defined in `src/custom_rules`.
+
+GramVarKit also supports custom grammar modifications during new grammar generation, which can be defined in `src/custom_grammar`.
 
 ##### Transforming from original grammar to the new one
-For example, to separate two statements using either `<line_sep>` or comments, the transform rule would be:
+For example, to separate two statements using either `<line_sep>` or comments, the conversion rule would be:
 ```
 {"condition":{"type":"$_statement","prev_sibling":"$_statement"},"action":"custom_before","content":"choice_comment_line_sep"}
 ```
@@ -210,7 +212,7 @@ The following functions can be used to modify the regenerated code:
 - `maybe_indent(self)` writes indentation at the beginning of a new line.
 - `maybe_space(self)` appends a space to the code.
 - `change_indent(self,delta)` changes the level of indentation.
-If any of the above functions are called in the custom transformation function, the annotation `@writing_op` should be used.
+If any of the above functions are called in the custom conversion function, the annotation `@writing_op` should be used.
 
 ##### Transfroming from new grammar to the original one
 For the `function_definition` rule, the original grammar is:
@@ -250,11 +252,11 @@ function_definition: $ => seq(
 ```
 If the parameters of the function definition are empty, the syntax node `parameters` will be missing in the new parse tree and needs to be inserted.
 
-The transform rule for this insertion is:
+The conversion rule for this insertion is:
 ```
 {"condition":{"parent_type":"function_definition","type":"$identifier","field":"name"},"action":"custom_after","content":"empty_parameters"}
 ```
-The definition of the custom transform function `empty_parameters` is:
+The definition of the custom conversion function `empty_parameters` is:
 ```
 def empty_parameters(self,index,**args):
     assert self.children[index].type=='identifier'
@@ -271,12 +273,12 @@ def empty_parameters(self,index,**args):
 - `self.aux_infs` stores information about the child node, such as its field name.
 - The return value of the function should point to the same element that the original argument `index` referred to at the beginning of the function. In this example, the `parameters` node is inserted after the `identifier` node, thus the position of `identifier` remains unchanged, and the same `index` is returned.
 
-The `params` attribute in custom transform rules specifies the arguments that will be passed to the custom transform function.
-For example, to modify the `text` of the syntax node `true`, the transform rule would be:
+The `params` attribute in custom conversion rules specifies the arguments that will be passed to the custom conversion function.
+For example, to modify the `text` of the syntax node `true`, the conversion rule would be:
 ```
 {"condition":{"type":"$true"},"action":"custom_replace","content":"text_replace","params":{"text":"True"}}
 ```
-The definition of the custom transform function `text_replace` is:
+The definition of the custom conversion function `text_replace` is:
 ```
 def text_replace(self,index,**args):
     text=args['text']
@@ -291,8 +293,8 @@ def text_replace(self,index,**args):
 {"condition":{"type":"$_space"},"action":"delete"}
 ```
 
-### Running GramTrans
-To begin using GramTrans, first download the grammar file for the original grammar provided by tree-sitter.
+### Running GramVarKit
+To begin using GramVarKit, first download the grammar file for the original grammar provided by tree-sitter.
 
 #### Parsing the configuration file
 To generate the rules for transforming between the original and new grammar formats, run the following command:
@@ -302,7 +304,7 @@ python parse_configuration.py --rule_path ${path_of_configuration_file}
 This will generate three JSON files:
 - The `*.ori_to_new.json` file contains rules for transforming code from the original grammar to the new grammar.
 - The `*.new_to_ori.json` file contains rules for transforming code from the new grammar to the original grammar.
-- The `*.customs.json` file contains all the custom transform functions used in the process.
+- The `*.customs.json` file contains all the custom conversion functions used in the process.
 
 Some generated rules may be invalid:
 - If a rule has an empty `condition`.
@@ -310,12 +312,12 @@ Some generated rules may be invalid:
 
 During postprocessing, certain conditions may be modified:
 - If `prev_sibling` or `next_sibling` references an inline rule name, it will be expanded to all possible node types that can be the last or first node of the inline rule, respectively.
-- If `new_to_ori` transform rules include a `type` condition referring to an inline rule name with an `insert_before` action, it will be transformed similarily as above.
+- If `new_to_ori` conversion rules include a `type` condition referring to an inline rule name with an `insert_before` action, it will be transformed similarily as above.
 - For `new_to_ori` rules, if the `type` condition refers to an inline rule name, the `next_sibling` condition will be removed.
 
 #### Generating the new parser
 Once the transformation rules are parsed, they will be applied to update the `grammar.json` file. 
-For complicated cases, such as a custom transformation function is integrated in the process, manual intervention will be required with these transformation rules flagged.
+For complicated cases, such as those requiring custom conversion functions, the corresponding transformation rules may not be applied to the grammar automatically and will be flagged for manual handling.
 
 The paths for the original grammar file and the new grammar file are defined in `config.json`. Ensure that these paths are correctly set before proceeding.
 

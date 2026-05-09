@@ -183,7 +183,7 @@ class BaseUnparser:
             self.current_line=""
         if(add_comment and self.comments):
             # self.lines.extend(self.comments[:])
-            self.lines[-1]+=" ".join(self.comments)
+            self.lines[-1]+="\n".join(self.comments)
             self.comments=[]
         # self.maybe_indent()
                 

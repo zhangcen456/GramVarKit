@@ -302,9 +302,9 @@ def compile_rules(rules):
                 assert isinstance(spython_items,dict)
                 py_to_spy_condition={}
                 spy_to_py_condition={}
-                if("parent" in r):
-                    py_to_spy_condition['parent_type']=r['parent']
-                    spy_to_py_condition['parent_type']=r['parent']
+                if("prod_rule" in r):
+                    py_to_spy_condition['parent_type']=r['prod_rule']
+                    spy_to_py_condition['parent_type']=r['prod_rule']
                 current_node_condition(python_items,py_to_spy_condition)
                 current_node_condition(spython_items,spy_to_py_condition)
                 py_to_spy.append({"condition":py_to_spy_condition,"action":"replace","content":spython_items['text'],"ori_element":spython_items})
@@ -315,11 +315,11 @@ def compile_rules(rules):
                 assert len(py_anchors)==len(spy_anchors)
                 if(len(py_anchors)==0):
                     py_to_spy_temp,spy_to_py_temp=compare_list(python_items,spython_items)
-                    if("parent" in r):
+                    if("prod_rule" in r):
                         for rule in py_to_spy_temp:
-                            rule['condition']['parent_type']=r['parent']
+                            rule['condition']['parent_type']=r['prod_rule']
                         for rule in spy_to_py_temp:
-                            rule['condition']['parent_type']=r['parent']
+                            rule['condition']['parent_type']=r['prod_rule']
                     py_to_spy.extend(py_to_spy_temp)
                     spy_to_py.extend(spy_to_py_temp)
                 else:
@@ -346,11 +346,11 @@ def compile_rules(rules):
                             next_anchor=python_items[py_anchors[i]]
                             next_anchor_spy=spython_items[spy_anchors[i]]
                         py_to_spy_temp,spy_to_py_temp=compare_list(py_list,spy_list,prev_anchor,prev_anchor_spy,next_anchor,next_anchor_spy)
-                        if("parent" in r):
+                        if("prod_rule" in r):
                             for rule in py_to_spy_temp:
-                                rule['condition']['parent_type']=r['parent']
+                                rule['condition']['parent_type']=r['prod_rule']
                             for rule in spy_to_py_temp:
-                                rule['condition']['parent_type']=r['parent']
+                                rule['condition']['parent_type']=r['prod_rule']
                         py_to_spy.extend(py_to_spy_temp)
                         spy_to_py.extend(spy_to_py_temp)
         except RuntimeError as e:

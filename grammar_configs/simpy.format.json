@@ -1,6 +1,6 @@
 {
     "both":[
-        {"parent":"_simple_statements","original":[{"type":"$_newline","symbol":true}],"new":[]}
+        {"prod_rule":"_simple_statements","original":[{"type":"$_newline","symbol":true}],"new":[]}
     
     ],
     "ori_to_new":[
